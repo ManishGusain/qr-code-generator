@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator</title>
+
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            margin: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        form {
+            margin: 20px;
+        }
+
+        label {
+            font-size: 18px;
+            margin-right: 10px;
+        }
+
+        input {
+            padding: 8px;
+            font-size: 16px;
+            border-radius: 5px;
+        }
+
+        .qr-btn {
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .qr-btn:hover {
+            background-color: #45a049;
+        }
+
+        #qrcode-container {
+            margin-top: 20px;
+        }
+
+        #downloadButton {
+            display: none;
+            margin-top: 10px;
+            border-radius: 5px;
+            padding: 10px;
+            font-size: 16px;
+            background-color: #008CBA;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        #downloadButton:hover {
+            background-color: #005580;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>QR Code Generator</h1>
+
+    <form id="qrForm">
+        <input type="text" id="urlInput" placeholder="Enter..." required>
+        <br />
+        <br />
+        <button type="button" onclick="generateQRCode()" class="qr-btn">Generate QR Code</button>
+    </form>
+
+    <div id="qrcode-container"></div>
+    <br />
+    <button id="downloadButton" onclick="downloadQRCode()">Download QR Code</button>
+
+    <script>
+        let generatedQRCode = null;
+
+        async function generateQRCode() {
+            const urlInput = document.getElementById('urlInput').value;
+
+            if (!urlInput.trim()) {
+                alert('Please enter a valid Data');
+                return;
+            }
+
+            const response = await fetch('/generate-qr', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ qr_data: urlInput }),
+            });
+
+            if (response.status === 200) {
+                const data = await response.json();
+                generatedQRCode = data.qrCodeUrl;
+                displayQRCode(data.qrCodeUrl);
+                showDownloadButton();
+            } else {
+                console.error('Failed to generate QR code');
+            }
+        }
+
+        function displayQRCode(qrCodeUrl) {
+            const qrcodeContainer = document.getElementById('qrcode-container');
+            qrcodeContainer.innerHTML = qrCodeUrl;
+        }
+
+        function showDownloadButton() {
+            const downloadButton = document.getElementById('downloadButton');
+            downloadButton.style.display = 'inline-block';
+        }
+
+        function downloadQRCode() {
+            if (generatedQRCode) {
+                const blob = new Blob([generatedQRCode], { type: 'image/png' });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'qrcode.png';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                setTimeout(() => {
+                    URL.revokeObjectURL(url);
+                }, 100);
+            } else {
+                console.error('No QR code generated');
+            }
+        }
+    </script>
+</body>
+
+</html>
